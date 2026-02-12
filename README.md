@@ -1,36 +1,57 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Aiclex Mail Engine
+
+A powerful, self-hosted email marketing and automation platform built with Next.js 14.
+
+## Features
+
+- **Campaign Management**: Create, edit, and schedule rich-text email campaigns.
+- **Recipient Management**: Bulk CSV import, manual entry, and list management.
+- **Analytics Dashboard**: Real-time tracking of Opens, Clicks, and Sending stats.
+- **Lead Scoring**: Automatically score leads based on engagement (Hot/Warm/Cold).
+- **Subscription System**: Built-in plan limits and billing management (Mocked).
+- **Super Admin Panel**: System-wide oversight and user management.
+- **High Performance**: Powered by BullMQ and Redis for scalable email sending.
+
+## Tech Stack
+
+- **Framework**: Next.js 14 (App Router)
+- **Database**: PostgreSQL + Prisma ORM
+- **Queue**: Redis + BullMQ
+- **UI**: Tailwind CSS + ShadCN UI
+- **Auth**: NextAuth.js v5
 
 ## Getting Started
 
-First, run the development server:
+1. **Clone the repo**
+   ```bash
+   git clone <repo-url>
+   cd mailsysem
+   ```
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+3. **Setup Environment**
+   Copy `.env.example` to `.env` and fill in your credentials.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+4. **Initialize Database**
+   ```bash
+   npx prisma migrate dev
+   ```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+5. **Run Development Server**
+   ```bash
+   npm run dev
+   ```
 
-## Learn More
+6. **Start Worker (in separate terminal)**
+   ```bash
+   npm run worker
+   ```
 
-To learn more about Next.js, take a look at the following resources:
+## Documentation
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- [Deployment Guide](./DEPLOY.md)
+- [Implementation Plan](./implementation_plan.md)
