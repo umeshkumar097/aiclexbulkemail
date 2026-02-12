@@ -1,0 +1,35 @@
+#!/usr/bin/expect -f
+
+set timeout 60
+set ip "151.243.146.192"
+set user "root"
+set password "Umesh@2003##"
+
+spawn ssh $user@$ip
+
+expect {
+    -re ".*es.*no.*" { send "yes\r"; exp_continue }
+    -re ".*assword.*" { send "$password\r" }
+}
+
+expect -re ".*(#|\\$) "
+send "export TERM=dumb\r"
+expect -re ".*(#|\\$) "
+
+send "echo '=== DOCKER PS ALL ==='\r"
+send "docker ps -a | grep mailsysem\r"
+expect -re ".*(#|\\$) "
+
+send "cd /var/www/mailsysem\r"
+expect -re ".*(#|\\$) "
+
+send "echo '=== COMPOSE LOGS ==='\r"
+send "docker-compose logs --tail 50\r"
+expect -re ".*(#|\\$) "
+
+send "echo '=== TRYING TO START ==='\r"
+send "docker-compose up -d\r"
+expect -re ".*(#|\\$) "
+
+send "exit\r"
+expect eof

@@ -1,0 +1,67 @@
+#!/usr/bin/expect -f
+
+set timeout 30
+set ip "151.243.146.192"
+set user "root"
+set password "Umesh@2003##"
+
+spawn ssh $user@$ip
+
+expect {
+    -re ".*es.*no.*" { send "yes\r"; exp_continue }
+    -re ".*assword.*" { send "$password\r" }
+}
+
+expect -re ".*(#|\\$) "
+
+send "echo '=== CONFIGURING CYBERPANEL PROXY ==='\r"
+
+# 1. Verify Docker App
+send "docker ps | grep mailsysem\r"
+expect {
+    -re "mailsysem" {
+        send "echo 'Container is running'\r"
+    }
+    timeout {
+        send "echo 'Container NOT running. Starting...'\r"
+        send "cd /var/www/mailsysem && docker-compose up -d\r"
+        expect -re ".*(#|\\$) "
+    }
+}
+expect -re ".*(#|\\$) "
+
+# 2. Check Document Root
+# CyberPanel standard: /home/domain.com/public_html
+set docroot "/home/mail.ro9.in/public_html"
+
+send "ls -d $docroot\r"
+expect {
+    "No such file" {
+        send "echo 'Document root not found! Checking /home...'\r"
+        send "ls /home\r"
+    }
+    -re ".*public_html" {
+        send "echo 'Found Document Root'\r"
+        
+        # 3. Create .htaccess for Proxy (Escaped brackets)
+        send "cat > $docroot/.htaccess <<EOF
+RewriteEngine On
+RewriteRule ^(.*)$ http://127.0.0.1:3005/\$1 \[P,E=Proxy-Host:mail.ro9.in\]
+EOF\r"
+        
+        # 4. Fix Permissions
+        send "chown -R mail.ro9.in:mail.ro9.in $docroot/.htaccess\r"
+    }
+}
+expect -re ".*(#|\\$) "
+
+# 5. Restart OpenLiteSpeed
+send "systemctl restart lsws\r"
+expect -re ".*(#|\\$) "
+
+# 6. Verify Listeners
+send "netstat -tulpn | grep :80\r"
+expect -re ".*(#|\\$) "
+
+send "exit\r"
+expect eof

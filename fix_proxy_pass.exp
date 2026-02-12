@@ -1,0 +1,32 @@
+#!/usr/bin/expect -f
+
+set timeout 30
+set ip "151.243.146.192"
+set user "root"
+set password "Umesh@2003##"
+
+spawn ssh $user@$ip
+
+expect {
+    -re ".*es.*no.*" { send "yes\r"; exp_continue }
+    -re ".*assword.*" { send "$password\r" }
+}
+
+expect -re ".*(#|\\$) "
+
+send "echo '=== FIXING PROXY PASS ==='\r"
+
+# Replace 172.17.0.1 with Public IP
+send "sed -i 's/172.17.0.1/151.243.146.192/g' /root/crux-invoice-management/crux-invoice-springboot/nginx/nginx.conf\r"
+expect -re ".*(#|\\$) "
+
+# Reload Nginx Container
+send "docker exec crux-invoice-nginx nginx -s reload\r"
+expect -re ".*(#|\\$) "
+
+# Verify Change
+send "grep 'proxy_pass' /root/crux-invoice-management/crux-invoice-springboot/nginx/nginx.conf | tail -n 1\r"
+expect -re ".*(#|\\$) "
+
+send "exit\r"
+expect eof

@@ -1,0 +1,61 @@
+#!/usr/bin/expect -f
+
+set timeout 20
+set ip "151.243.146.192"
+set user "root"
+set password "Umesh@2003##"
+
+spawn ssh $user@$ip
+
+expect {
+    "yes/no" { send "yes\r"; exp_continue }
+    "assword:" { send "$password\r" }
+}
+
+expect "#"
+
+# 1. Check Docker Container
+send "echo '--- Check Docker Container ---'\r"
+send "docker ps | grep mailsysem\r"
+expect "#"
+
+# 2. Check Nginx Config Conflicts (specifically for redirect issues)
+send "echo '--- Check Nginx Conflicts ---'\r"
+send "grep -r 'server_name' /etc/nginx/sites-enabled/\r"
+expect "#"
+
+# 3. Force Re-write mail.ro9.in Config (Port 3005)
+send "echo '--- Re-writing Nginx Config ---'\r"
+send "cat > /etc/nginx/sites-available/mail.ro9.in <<EOF
+server {
+    listen 80;
+    server_name mail.ro9.in;
+
+    location / {
+        proxy_pass http://localhost:3005;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \\\$http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host \\\$host;
+        proxy_cache_bypass \\\$http_upgrade;
+    }
+}
+EOF\r"
+expect "#"
+
+# 4. Enable Site & Check Syntax
+send "ln -sf /etc/nginx/sites-available/mail.ro9.in /etc/nginx/sites-enabled/\r"
+send "nginx -t\r"
+expect "#"
+
+# 5. Reload Nginx
+send "systemctl reload nginx\r"
+expect "#"
+
+# 6. Check if SSL cert needs to be applied
+send "echo '--- Applying SSL ---'\r"
+send "certbot --nginx -d mail.ro9.in --redirect --non-interactive --agree-tos --register-unsafely-without-email\r"
+expect "#"
+
+send "exit\r"
+expect eof

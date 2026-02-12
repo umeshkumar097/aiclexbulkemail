@@ -1,0 +1,54 @@
+#!/usr/bin/expect -f
+
+set timeout 300
+set ip "151.243.146.192"
+set user "root"
+set password "Umesh@2003##"
+
+spawn ssh $user@$ip
+
+expect {
+    -re ".*es.*no.*" { send "yes\r"; exp_continue }
+    -re ".*assword.*" { send "$password\r" }
+}
+
+expect -re ".*(#|\\$) "
+
+send "echo '=== FIXING DOCKER APP ==='\r"
+
+# 1. Setup Directory
+send "mkdir -p /var/www/mailsysem\r"
+expect -re ".*(#|\\$) "
+
+send "cd /var/www/mailsysem\r"
+expect -re ".*(#|\\$) "
+
+# 2. Git Clone/Pull
+send "if \[ -d .git \]; then git pull origin main; else git clone https://github.com/umeshkumar097/aiclexbulkemail.git .; fi\r"
+expect -re ".*(#|\\$) "
+
+# 3. Create .env
+# Note: Using printf to avoid complex escaping issues in cat
+send "printf \"DATABASE_URL='postgresql://neondb_owner:npg_YWVu3E7zMSBL@ep-billowing-paper-aidx5mso-pooler.c-4.us-east-1.aws.neon.tech/neondb?sslmode=require'\nNEXTAUTH_URL='https://mail.ro9.in'\nNEXTAUTH_SECRET='w6qPW+VwcL/a2JJW+qVtvVOtPMIn3ym20kZKqS9KxKI='\nREDIS_URL='redis://redis:6379'\nENCRYPTION_KEY='06726082a766cc573df0f52f5b523066'\n\" > .env\r"
+expect -re ".*(#|\\$) "
+
+# 4. Install Docker Compose (if missing) & Start
+send "apt update && apt install -y docker-compose\r"
+expect -re ".*(#|\\$) "
+
+send "docker-compose down\r"
+expect -re ".*(#|\\$) "
+
+send "docker-compose up -d --build\r"
+expect -re ".*(#|\\$) "
+
+# 5. Check Status
+send "docker ps\r"
+expect -re ".*(#|\\$) "
+
+# 6. Check Port 80 Listener (to see if it's LiteSpeed or Nginx)
+send "netstat -tulpn | grep :80\r"
+expect -re ".*(#|\\$) "
+
+send "exit\r"
+expect eof

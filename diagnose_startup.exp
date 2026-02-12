@@ -1,0 +1,30 @@
+#!/usr/bin/expect -f
+
+set timeout 60
+set ip "151.243.146.192"
+set user "root"
+set password "Umesh@2003##"
+
+spawn ssh $user@$ip
+
+expect {
+    -re ".*es.*no.*" { send "yes\r"; exp_continue }
+    -re ".*assword.*" { send "$password\r" }
+}
+
+expect -re ".*(#|\\$) "
+send "export TERM=dumb\r"
+expect -re ".*(#|\\$) "
+
+send "echo '=== DOCKER IMAGES ==='\r"
+send "docker images | grep mailsysem\r"
+expect -re ".*(#|\\$) "
+
+send "echo '=== ATTEMPTING FOREGROUND START ==='\r"
+# Run for 10 seconds then kill to capture startup logs
+send "cd /var/www/mailsysem\r"
+send "timeout 10s docker-compose up\r"
+expect -re ".*(#|\\$) "
+
+send "exit\r"
+expect eof

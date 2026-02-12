@@ -1,0 +1,25 @@
+#!/usr/bin/expect -f
+
+set timeout 30
+set ip "151.243.146.192"
+set user "root"
+set password "Umesh@2003##"
+
+spawn ssh $user@$ip
+
+expect {
+    -re ".*es.*no.*" { send "yes\r"; exp_continue }
+    -re ".*assword.*" { send "$password\r" }
+}
+
+expect -re ".*(#|\\$) "
+
+send "export TERM=dumb\r"
+expect -re ".*(#|\\$) "
+
+send "echo '=== CONTAINER ON PORT 80 ==='\r"
+send "docker ps --format '{{.Names}} {{.Ports}}' | grep ':80->'\r"
+expect -re ".*(#|\\$) "
+
+send "exit\r"
+expect eof

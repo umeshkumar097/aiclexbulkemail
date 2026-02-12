@@ -1,0 +1,73 @@
+#!/usr/bin/expect -f
+
+set timeout 30
+set ip "151.243.146.192"
+set user "root"
+set password "Umesh@2003##"
+
+spawn ssh $user@$ip
+
+expect {
+    -re ".*es.*no.*" { send "yes\r"; exp_continue }
+    -re ".*assword.*" { send "$password\r" }
+}
+
+expect -re ".*(#|\\$) "
+send "export TERM=dumb\r"
+expect -re ".*(#|\\$) "
+
+send "echo '=== OVERWRITING DOCKERFILE ==='\r"
+
+send "cat > /var/www/mailsysem/Dockerfile <<EOF
+FROM node:18-slim AS base
+
+FROM base AS deps
+WORKDIR /app
+
+COPY package.json ./
+RUN npm install --legacy-peer-deps
+
+FROM base AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+
+ENV NEXT_TELEMETRY_DISABLED 1
+
+RUN npx prisma generate
+RUN npm run build
+
+FROM base AS runner
+WORKDIR /app
+
+ENV NODE_ENV production
+ENV NEXT_TELEMETRY_DISABLED 1
+
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+COPY --from=builder /app/public ./public
+RUN mkdir .next
+RUN chown nextjs:nodejs .next
+
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+USER nextjs
+
+EXPOSE 3000
+ENV PORT 3000
+ENV HOSTNAME \"0.0.0.0\"
+
+CMD \[\"node\", \"server.js\"\]
+EOF\r"
+expect -re ".*(#|\\$) "
+
+send "echo '=== REBUILDING CONTAINER ==='\r"
+# Use a very long timeout for build
+set timeout 600
+send "cd /var/www/mailsysem && docker-compose build --no-cache && docker-compose up -d\r"
+expect -re ".*(#|\\$) "
+
+send "exit\r"
+expect eof

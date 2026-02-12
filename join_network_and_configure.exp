@@ -1,0 +1,64 @@
+#!/usr/bin/expect -f
+
+set timeout 60
+set ip "151.243.146.192"
+set user "root"
+set password "Umesh@2003##"
+
+spawn ssh $user@$ip
+
+expect {
+    -re ".*es.*no.*" { send "yes\r"; exp_continue }
+    -re ".*assword.*" { send "$password\r" }
+}
+
+expect -re ".*(#|\\$) "
+send "export TERM=dumb\r"
+expect -re ".*(#|\\$) "
+
+send "echo '=== JOINING NETWORK & CONFIGURING ==='\r"
+
+# 1. Update docker-compose.yml
+send "cat > /var/www/mailsysem/docker-compose.yml <<EOF
+version: '3.8'
+
+services:
+  mailsysem:
+    build: .
+    container_name: mailsysem_app
+    restart: always
+    ports:
+      - \"3005:3000\"
+    env_file:
+      - .env
+    networks:
+      - mailsysem_net
+      - crux-invoice-network
+
+networks:
+  mailsysem_net:
+    driver: bridge
+  crux-invoice-network:
+    external: true
+EOF\r"
+expect -re ".*(#|\\$) "
+
+# 2. Restart App to join network
+send "cd /var/www/mailsysem && docker-compose down && docker-compose up -d\r"
+expect -re ".*(#|\\$) "
+
+# 3. Update Nginx Proxy Pass
+# Replace any existing proxy_pass line with new one
+send "sed -i 's|proxy_pass http://.*;|proxy_pass http://mailsysem_app:3000;|g' /root/crux-invoice-management/crux-invoice-springboot/nginx/nginx.conf\r"
+expect -re ".*(#|\\$) "
+
+# 4. Reload Nginx
+send "docker exec crux-invoice-nginx nginx -s reload\r"
+expect -re ".*(#|\\$) "
+
+# 5. Verify
+send "grep 'proxy_pass' /root/crux-invoice-management/crux-invoice-springboot/nginx/nginx.conf | tail -n 1\r"
+expect -re ".*(#|\\$) "
+
+send "exit\r"
+expect eof

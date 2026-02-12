@@ -1,0 +1,30 @@
+#!/usr/bin/expect -f
+
+set timeout 1200
+set ip "151.243.146.192"
+set user "root"
+set password "Umesh@2003##"
+
+spawn ssh $user@$ip
+
+expect {
+    -re ".*es.*no.*" { send "yes\r"; exp_continue }
+    -re ".*assword.*" { send "$password\r" }
+}
+
+expect -re ".*(#|\\$) "
+send "export TERM=dumb\r"
+expect -re ".*(#|\\$) "
+
+send "echo '=== BUILDING AND STARTING ==='\r"
+send "cd /var/www/mailsysem\r"
+# Force rebuild to ensure we use the latest Dockerfile and tag it correctly
+send "docker-compose up --build -d\r"
+expect -re ".*(#|\\$) "
+
+send "echo '=== VERIFYING ==='\r"
+send "docker ps | grep mailsysem\r"
+expect -re ".*(#|\\$) "
+
+send "exit\r"
+expect eof
