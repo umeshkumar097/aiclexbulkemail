@@ -55,3 +55,21 @@ A powerful, self-hosted email marketing and automation platform built with Next.
 
 - [Deployment Guide](./DEPLOY.md)
 - [Implementation Plan](./implementation_plan.md)
+
+## Deployment
+
+### Option 1: Vercel (Recommended for Serverless)
+See [DEPLOY.md](DEPLOY.md)
+
+### Option 2: VPS with Docker (Recommended for Self-Hosting)
+This project includes a fully automated deployment script for Docker.
+
+1.  **Run the script**:
+    ```bash
+    ./deploy_docker.sh
+    ```
+2.  **Enter Server Password**: You will be prompted for your VPS password multiple times.
+3.  **Result**: 
+    - App runs in a Docker container on port `3005`.
+    - Nginx is configured as a reverse proxy for `mail.ro9.in`.
+    - SSL certificates are auto-generated via Certbot.
