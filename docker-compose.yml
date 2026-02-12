@@ -11,7 +11,10 @@ services:
       - .env
     networks:
       - mailsysem_net
+      - crux-invoice-network
 
 networks:
   mailsysem_net:
     driver: bridge
+  crux-invoice-network:
+    external: true
