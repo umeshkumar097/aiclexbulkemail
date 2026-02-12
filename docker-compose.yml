@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  mailsysem:
+    build: .
+    container_name: mailsysem_app
+    restart: always
+    ports:
+      - "3005:3000" # Expose on port 3005 to avoid conflict with existing apps
+    env_file:
+      - .env
+    networks:
+      - mailsysem_net
+
+networks:
+  mailsysem_net:
+    driver: bridge
